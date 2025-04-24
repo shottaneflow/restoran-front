@@ -1,0 +1,14 @@
+<!-- profile.component.html -->
+<div>
+  <h2>Edit Profile</h2>
+  <form (ngSubmit)="updateProfile()">
+    <label for="phone">Phone:</label>
+    <input type="text" id="phone" [(ngModel)]="phone" name="phone"><br>
+
+    <label for="clientName">Client Name:</label>
+    <input type="text" id="clientName" [(ngModel)]="clientName" name="clientName"><br>
+
+    <button type="submit">Save</button>
+    <button (click)="goToHome()">На главную</button>
+  </form>
+</div>

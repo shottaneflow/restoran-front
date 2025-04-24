@@ -1,0 +1,205 @@
+<div class="container">
+  <div *ngIf="isAdminMode; else userContent">
+    <h1>Welcome, Admin!</h1>
+    <button (click)="toggleAllBookings()" class="toggle-btn">
+      {{ showAllBookings ? 'Show My Bookings' : 'Show All Bookings' }}
+    </button>
+  </div>
+
+  <ng-template #userContent>
+    <h1>Welcome, User!</h1>
+    <button (click)="goToProfile()">Go to Profile</button>
+  </ng-template>
+
+
+  <!-- Бронирования -->
+  <div class="booking-section">
+    <button (click)="isBookingFormVisible = true">Create Booking</button>
+
+    <!-- Форма создания брони -->
+    <div *ngIf="isBookingFormVisible" class="booking-form">
+      <h2>New Booking</h2>
+      <label>
+        Date and Time:
+        <input [(ngModel)]="newBooking.date" type="datetime-local">
+      </label>
+      <label>
+        Guest Count:
+        <input [(ngModel)]="newBooking.guestCount" type="number" min="1">
+      </label>
+      <button (click)="createBooking()">Save</button>
+      <button (click)="isBookingFormVisible = false">Cancel</button>
+    </div>
+
+    <!-- Форма редактирования -->
+    <div *ngIf="selectedBooking" class="booking-form">
+      <h2>Edit Booking</h2>
+      <label>
+        Date and Time:
+        <input [(ngModel)]="selectedBooking.date" type="datetime-local">
+      </label>
+      <label>
+        Guest Count:
+        <input [(ngModel)]="selectedBooking.guestCount" type="number" min="1">
+      </label>
+      <button (click)="updateBooking()">Update</button>
+      <button (click)="selectedBooking = null">Cancel</button>
+    </div>
+
+    <!-- Список броней -->
+    <div *ngIf="bookings.length > 0" class="bookings-list">
+      <h2>{{ showAllBookings && isAdminMode ? 'All Bookings' : 'My Bookings' }}</h2>
+      <ul>
+        <li *ngFor="let booking of bookings">
+          <div>
+            <strong>Date:</strong> {{ booking.date | date:'medium' }}
+          </div>
+          <div>
+            <strong>Guests:</strong> {{ booking.guestCount }}
+          </div>
+          <div *ngIf="booking.client">
+            <strong>Client:</strong> {{ booking.client.username }}
+          </div>
+          <div class="booking-actions">
+            <button (click)="showEditForm(booking)">Edit</button>
+            <button (click)="deleteBooking(booking.id!)">Delete</button>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+
+  <div class="menu-section">
+    <h2>Menus</h2>
+
+    <!-- Add Menu Button (Admin only) -->
+    <button *ngIf="isAdminMode" (click)="isMenuFormVisible = true">
+      Add New Menu
+    </button>
+
+    <!-- Menu Form -->
+    <div *ngIf="isMenuFormVisible && isAdminMode" class="menu-form">
+      <h3>Create Menu</h3>
+      <input [(ngModel)]="newMenu.name" placeholder="Menu name">
+      <button (click)="createMenu()">Save</button>
+      <button (click)="resetMenuForm()">Cancel</button>
+    </div>
+
+
+
+    <!-- Menu List -->
+    <div class="menu-list">
+      <div *ngFor="let menu of menus" class="menu-item">
+        <div class="menu-header" (click)="selectMenu(menu)">
+          <h3>{{ menu.name || 'Unnamed Menu' }}</h3>
+          <button *ngIf="isAdminMode" (click)="deleteMenu(menu.id!); $event.stopPropagation()">
+            Delete
+          </button>
+        </div>
+
+
+
+
+        <!-- Products for selected menu -->
+        <div *ngIf="selectedMenu?.id === menu.id" class="products-section">
+          <h4>Products</h4>
+
+          <!-- Add Product Button (Admin only) -->
+          <button *ngIf="isAdminMode" (click)="isProductFormVisible = true">
+            Add Product
+          </button>
+
+          <!-- Product Form -->
+          <div *ngIf="isProductFormVisible" class="product-form">
+            <h4>{{ selectedProduct ? 'Edit Product' : 'New Product' }}</h4>
+
+            <!-- Для редактирования делаем поле productName readonly -->
+            <input
+              [(ngModel)]="(selectedProduct || newProduct).productName"
+              placeholder="Product name"
+              [readonly]="!!selectedProduct">  <!-- readonly только при редактировании -->
+
+            <textarea [(ngModel)]="(selectedProduct || newProduct).description" placeholder="Description"></textarea>
+            <input type="number" [(ngModel)]="(selectedProduct || newProduct).price" placeholder="Price">
+
+            <button (click)="selectedProduct ? updateProduct() : addProduct()">
+              {{ selectedProduct ? 'Update' : 'Save' }}
+            </button>
+            <button (click)="selectedProduct = null; resetProductForm()">Cancel</button>
+          </div>
+
+          <!-- Product List -->
+          <div *ngIf="products.length > 0" class="product-list">
+            <div *ngFor="let product of products" class="product-card">
+              <h5>{{ product.productName }}</h5>
+              <p>{{ product.description }}</p>
+              <p class="price">${{ product.price }}</p>
+              <div *ngIf="isAdminMode" class="product-actions">
+                <button (click)="showEditProductForm(product); $event.stopPropagation()">Edit</button>
+                <button (click)="deleteProduct(product.productName)">Delete</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+
+  <!-- Заказы -->
+  <div class="order-section">
+    <button (click)="isOrderFormVisible = true">Create Order</button>
+
+    <div *ngIf="isOrderFormVisible" class="order-form">
+      <h2>New Order</h2>
+
+      <p>Select Products:</p>
+      <div *ngFor="let product of products">
+        <label>
+          <input type="checkbox"
+                 [checked]="selectedProducts.includes(product)"
+                 (change)="toggleProductSelection(product)">
+          {{ product.productName }} - {{ product.price | currency }}
+        </label>
+      </div>
+
+      <button (click)="createOrder()">Submit Order</button>
+      <button (click)="isOrderFormVisible = false">Cancel</button>
+    </div>
+  </div>
+  <!-- Заказы пользователя -->
+  <div class="orders-section">
+    <h2>Your Orders</h2>
+    <ul>
+      <li *ngFor="let order of orders">
+        <span>{{ formatDate(order.date) }}</span> |
+        <button (click)="editOrder(order)">Edit</button>
+        <button (click)="deleteOrder(order.id!)">Delete</button>
+      </li>
+    </ul>
+
+    <!-- Форма редактирования заказа -->
+    <div *ngIf="selectedOrder">
+      <h3>Edit Order</h3>
+      <label>Date:
+        <input type="datetime-local" [(ngModel)]="selectedOrder.date" />
+      </label>
+      <!-- Можно добавить отображение и выбор продуктов -->
+      <button (click)="updateOrder()">Update</button>
+      <button (click)="selectedOrder = null">Cancel</button>
+    </div>
+  </div>
+
+
+
+
+
+
+  <button (click)="logout()" class="btn btn-danger">
+    <i class="fas fa-sign-out-alt me-2"></i>Выйти
+  </button>
+</div>
